@@ -62,7 +62,7 @@ header{position:sticky;top:0;z-index:200;background:rgba(7,6,18,.94);backdrop-fi
 .sc-dot{position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--violet);animation:pulse 1.5s ease-in-out infinite}
 
 /* tab type badge */
-.tabs{position:relative;z-index:1;display:flex;gap:8px;overflow-x:auto;padding:4px 14px 10px;scrollbar-width:none}
+.tabs{position:sticky;top:53px;z-index:150;background:rgba(7,6,18,.94);backdrop-filter:blur(20px);display:flex;gap:8px;overflow-x:auto;padding:8px 14px 10px;scrollbar-width:none;border-bottom:1px solid var(--border)}
 .tabs::-webkit-scrollbar{display:none}
 .tab{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;cursor:pointer;transition:all .2s;min-width:84px;text-align:center;flex-shrink:0;position:relative}
 .tab:hover{border-color:var(--violet)}
@@ -787,8 +787,13 @@ function showTab(idx){
   if(nb){nb.disabled=idx===tabs.length-1;nb.textContent=idx===tabs.length-1?'Done ✓':'Next →';}
   if(idx===2)setTimeout(()=>drawActivation('sigmoid',document.querySelector('#actBtns .pg-btn2')),60);
   if(idx===6)setTimeout(()=>{if(!NET)initNet();refreshPlayground();},60);
-  if(idx===7)setTimeout(()=>{const e=document.getElementById('apiKey');if(e)e.focus();},60);
-  window.scrollTo({top:0,behavior:'smooth'});
+  // scroll so the content sits just below the sticky header + tab bar
+  requestAnimationFrame(()=>{
+    const contentEl=document.getElementById('content');
+    const offset=110; // sticky header (~53) + sticky tabs (~57)
+    const y=window.scrollY+contentEl.getBoundingClientRect().top-offset;
+    window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
+  });
 }
 function navTab(d){const n=currentTab+d;if(n>=0&&n<tabs.length)showTab(n);}
 showTab(0);
