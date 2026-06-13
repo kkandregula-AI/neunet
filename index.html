@@ -777,7 +777,8 @@ async function askTutor(){
 let currentTab=0;
 function showTab(idx){
   currentTab=idx;visited.add(idx);
-  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===idx);t.classList.toggle('visited',visited.has(i)&&i!==idx);});
+  const tabEls=document.querySelectorAll('.tab');
+  tabEls.forEach((t,i)=>{t.classList.toggle('active',i===idx);t.classList.toggle('visited',visited.has(i)&&i!==idx);});
   document.getElementById('content').innerHTML=tabs[idx].render();
   roadmapData.forEach((r,i)=>{const rm=document.getElementById('rm'+i);if(rm&&visited.has(i)){rm.textContent='✓';rm.style.background='rgba(74,222,128,.12)';rm.style.borderColor='var(--green)';rm.style.color='var(--green)';}});
   safeSet('navProgTxt',`Step ${idx+1} of ${tabs.length}`);
@@ -785,6 +786,12 @@ function showTab(idx){
   const pb=document.getElementById('prevBtn'),nb=document.getElementById('nextBtn');
   if(pb)pb.disabled=idx===0;
   if(nb){nb.disabled=idx===tabs.length-1;nb.textContent=idx===tabs.length-1?'Done ✓':'Next →';}
+  // horizontally centre the active tab inside the scrollable tab bar
+  const activeTab=tabEls[idx], tabsBar=document.getElementById('tabs');
+  if(activeTab&&tabsBar){
+    const target=activeTab.offsetLeft-(tabsBar.clientWidth/2)+(activeTab.offsetWidth/2);
+    tabsBar.scrollTo({left:Math.max(0,target),behavior:'smooth'});
+  }
   if(idx===2)setTimeout(()=>drawActivation('sigmoid',document.querySelector('#actBtns .pg-btn2')),60);
   if(idx===6)setTimeout(()=>{if(!NET)initNet();refreshPlayground();},60);
   // scroll so the content sits just below the sticky header + tab bar
