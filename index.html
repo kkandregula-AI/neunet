@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Neural Networks &amp; Backpropagation · AI Education Series Ep 06</title>
+<meta name="description" content="Neural Networks & Backpropagation — interactive forward pass, activations, loss, backprop math, live training playground, AI tutor"/>
+<meta name="theme-color" content="#070612"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Neural Nets"/>
+<link rel="manifest" id="manifest-link"/>
+<link rel="apple-touch-icon" id="apple-icon"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#070612;--bg2:#0c0a1e;--card:#0e0c20;
+  --border:#1c1834;--border2:#262044;
+  --violet:#a78bfa;--purple:#8b5cf6;--cyan:#22d3ee;--green:#4ade80;
+  --gold:#f4b942;--pink:#f472b6;--orange:#fb923c;--red:#f87171;--blue:#60a5fa;
+  --text:#e6e3f5;--muted:#7a7499;--muted2:#3d3760;
+  --free:#4ade80;--ai:#f4b942;
+  --font-d:'Cinzel',serif;--font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100vh;overflow-x:hidden;padding-bottom:118px;font-size:15px;line-height:1.5}
+
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(167,139,250,.05) 1px,transparent 1px);background-size:30px 30px;pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(110px);opacity:.13}
+.o1{width:480px;height:480px;background:radial-gradient(var(--purple),transparent);top:-140px;left:-100px}
+.o2{width:340px;height:340px;background:radial-gradient(var(--cyan),transparent);bottom:25%;right:-90px}
+.o3{width:200px;height:200px;background:radial-gradient(var(--pink),transparent);bottom:8%;left:18%}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;animation:tw var(--d,3s) ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.07}50%{opacity:.55}}
+#prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--purple),var(--violet),var(--cyan));z-index:300;transition:width .15s}
+
+header{position:sticky;top:0;z-index:200;background:rgba(7,6,18,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;justify-content:space-between}
+.badge{font-family:var(--font-d);font-size:.6rem;letter-spacing:.16em;color:var(--violet);background:rgba(167,139,250,.09);border:1px solid rgba(167,139,250,.28);padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:6px}
+.bdot{width:6px;height:6px;background:var(--violet);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
+.ep{font-size:.6rem;font-family:var(--font-d);color:var(--gold);background:rgba(244,185,66,.1);border:1px solid rgba(244,185,66,.25);padding:4px 10px;border-radius:10px;letter-spacing:.08em}
+
+.hero{position:relative;z-index:1;text-align:center;padding:40px 18px 22px}
+.hero-ep{display:inline-flex;align-items:center;gap:8px;font-size:.66rem;letter-spacing:.16em;color:var(--violet);text-transform:uppercase;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.22);padding:6px 16px;border-radius:20px;margin-bottom:16px}
+.hero h1{font-family:var(--font-d);font-size:clamp(1.5rem,6vw,2.5rem);line-height:1.1;margin-bottom:13px}
+.a1{color:var(--violet)}.a2{color:var(--cyan)}.a3{color:var(--pink)}
+.hero-sub{color:#b4afd0;font-size:.92rem;max-width:430px;margin:0 auto 22px;line-height:1.8}
+
+/* legend — Free vs AI distinction */
+.legend{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+.leg{display:inline-flex;align-items:center;gap:7px;font-size:.7rem;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid}
+.leg-free{color:var(--free);border-color:rgba(74,222,128,.4);background:rgba(74,222,128,.08)}
+.leg-ai{color:var(--ai);border-color:rgba(244,185,66,.4);background:rgba(244,185,66,.08)}
+.leg .dot{width:8px;height:8px;border-radius:50%}
+.leg-free .dot{background:var(--free)}
+.leg-ai .dot{background:var(--ai)}
+
+.scenario{position:relative;z-index:1;margin:14px 14px}
+.sc-query{background:linear-gradient(135deg,rgba(167,139,250,.1),rgba(34,211,238,.05));border:1px solid rgba(167,139,250,.38);border-radius:14px;padding:15px 16px;margin-bottom:11px;position:relative}
+.sc-dot{position:absolute;top:14px;right:14px;width:8px;height:8px;border-radius:50%;background:var(--violet);animation:pulse 1.5s ease-in-out infinite}
+
+/* tab type badge */
+.tabs{position:relative;z-index:1;display:flex;gap:8px;overflow-x:auto;padding:4px 14px 10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:9px 12px;cursor:pointer;transition:all .2s;min-width:84px;text-align:center;flex-shrink:0;position:relative}
+.tab:hover{border-color:var(--violet)}
+.tab.active{border-color:var(--violet);background:rgba(167,139,250,.1)}
+.tab.tfree.active{border-color:var(--free);background:rgba(74,222,128,.08)}
+.tab.tai.active{border-color:var(--ai);background:rgba(244,185,66,.08)}
+.tab.visited::after{content:'✓';position:absolute;top:4px;right:6px;font-size:.55rem;color:var(--green)}
+.tab .ti{font-size:1.3rem;margin-bottom:3px}
+.tab .tn{font-size:.62rem;font-weight:600;color:var(--text);line-height:1.3}
+.tab .tt{font-size:.5rem;margin-top:3px;padding:1px 6px;border-radius:6px;display:inline-block;font-weight:700;letter-spacing:.04em}
+.tab .tt-free{background:rgba(74,222,128,.14);color:var(--free)}
+.tab .tt-ai{background:rgba(244,185,66,.14);color:var(--ai)}
+
+.content{position:relative;z-index:1;padding:0 14px 14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:13px;animation:fu .35s ease}
+@keyframes fu{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:none}}
+
+/* section mode banner */
+.mode-banner{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:13px;margin-bottom:14px}
+.mode-free{background:rgba(74,222,128,.07);border:1.5px solid rgba(74,222,128,.3)}
+.mode-ai{background:rgba(244,185,66,.07);border:1.5px solid rgba(244,185,66,.3)}
+.mode-ico{font-size:1.3rem;flex-shrink:0}
+.mode-ttl{font-size:.72rem;font-weight:700;font-family:var(--font-d);letter-spacing:.05em}
+.mode-sub{font-size:.66rem;color:var(--muted);margin-top:1px}
+.mode-tag{margin-left:auto;font-size:.58rem;font-weight:700;padding:4px 11px;border-radius:11px;flex-shrink:0}
+
+.card-title{font-family:var(--font-d);font-size:1.12rem;color:var(--violet);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.25}
+.pill{font-size:.6rem;font-family:var(--font-b);padding:3px 9px;border-radius:10px}
+.pill-v{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:var(--violet)}
+.pill-c{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.3);color:var(--cyan)}
+.pill-g{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--green)}
+.pill-p{background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3);color:var(--pink)}
+.pill-gold{background:rgba(244,185,66,.1);border:1px solid rgba(244,185,66,.3);color:var(--gold)}
+.card-desc{color:#bdb8da;font-size:.86rem;line-height:1.85;margin-bottom:15px}
+
+.cbox{background:#0a0818;border:1px solid rgba(167,139,250,.2);border-radius:13px;padding:14px;margin-bottom:14px}
+.clabel{font-size:.6rem;letter-spacing:.13em;color:var(--violet);font-family:var(--font-d);margin-bottom:9px}
+.cbody{font-family:var(--font-m);font-size:.76rem;color:#ddd6fe;line-height:1.95;overflow-x:auto;white-space:pre}
+.cbody .sym{color:var(--gold)}.cbody .kw{color:var(--cyan)}.cbody .str{color:var(--green)}.cbody .cmt{color:var(--muted);font-style:italic}.cbody .num{color:var(--orange)}.cbody .fn{color:var(--violet)}
+
+.slabel{font-size:.6rem;letter-spacing:.13em;color:var(--green);font-family:var(--font-d);margin-bottom:11px}
+.step{display:flex;gap:11px;margin-bottom:13px;align-items:flex-start}
+.sn{width:26px;height:26px;border-radius:50%;background:rgba(74,222,128,.1);border:1.5px solid var(--green);color:var(--green);font-size:.64rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.sb{flex:1}
+.sb .st{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px}
+.sb .sd{font-size:.74rem;color:var(--muted);line-height:1.65}
+.sb .sc{font-family:var(--font-m);font-size:.72rem;color:var(--cyan);background:rgba(34,211,238,.05);border:1px solid rgba(34,211,238,.1);border-radius:7px;padding:8px 11px;margin-top:6px;display:block;overflow-x:auto;line-height:1.85;white-space:pre}
+
+.tlabel{font-size:.6rem;letter-spacing:.13em;color:var(--gold);font-family:var(--font-d);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.dlbtn{background:rgba(244,185,66,.1);border:1px solid rgba(244,185,66,.3);color:var(--gold);padding:4px 12px;border-radius:8px;font-size:.6rem;cursor:pointer;font-family:var(--font-b);transition:all .2s}
+.dlbtn:hover{background:rgba(244,185,66,.22)}
+.twrap{overflow-x:auto;border-radius:11px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.72rem;font-family:var(--font-m)}
+th{background:#0a0818;color:var(--cyan);padding:9px 11px;text-align:left;font-size:.62rem;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+td{padding:8px 11px;border-bottom:1px solid rgba(28,24,52,.5);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:nth-child(even) td{background:rgba(255,255,255,.016)}
+td.hl{color:var(--violet);font-weight:500}
+td.ok{color:var(--green)} td.warn{color:var(--orange)} td.bad{color:var(--red)}
+
+.rbox{background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(34,211,238,.04));border:1px solid rgba(167,139,250,.28);border-radius:13px;padding:14px;margin-top:13px}
+.rlbl{font-size:.6rem;letter-spacing:.13em;color:var(--violet);font-family:var(--font-d);margin-bottom:6px}
+.rval{font-family:var(--font-m);font-size:.96rem;color:var(--violet);font-weight:500;margin-bottom:5px;line-height:1.4}
+.rdesc{font-size:.76rem;color:#bdb8da;line-height:1.7}
+.insight{background:rgba(244,185,66,.04);border-left:3px solid var(--gold);border-radius:0 11px 11px 0;padding:11px 14px;margin-top:11px}
+.ititle{font-size:.65rem;color:var(--gold);font-weight:600;margin-bottom:4px;letter-spacing:.04em}
+.itext{font-size:.74rem;color:#bdb8da;line-height:1.7}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:13px}
+.gi{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:11px;padding:11px;text-align:center}
+.gicon{font-size:1.4rem;margin-bottom:5px}
+.gname{font-size:.68rem;font-weight:600;margin-bottom:3px}
+.gdesc{font-size:.62rem;color:var(--muted);line-height:1.5}
+
+.pg-btn{background:linear-gradient(135deg,var(--purple),var(--cyan));border:none;border-radius:11px;padding:12px;font-size:.8rem;font-weight:600;color:#0a0818;cursor:pointer;font-family:var(--font-b);transition:all .2s}
+.pg-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(139,92,246,.35)}
+.pg-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.pg-btn2{background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text);border-radius:11px;padding:12px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:var(--font-b)}
+.ai-btn{background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:11px;padding:12px;font-size:.8rem;font-weight:600;color:#1a1206;cursor:pointer;font-family:var(--font-b);transition:all .2s}
+.ai-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(244,185,66,.35)}
+.ai-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+canvas.pg{width:100%;border-radius:12px;background:#0a0818;border:1px solid var(--border2)}
+input[type=range]{width:100%;accent-color:var(--violet);cursor:pointer;height:6px}
+
+.api-inp{flex:1;background:#0a0818;border:1px solid var(--border2);border-radius:9px;padding:10px 13px;color:var(--text);font-size:.78rem;font-family:var(--font-m);outline:none;transition:border-color .2s;width:100%}
+.api-inp:focus{border-color:var(--gold)}
+.api-inp::placeholder{color:var(--muted2)}
+.qchip{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.22);border-radius:10px;padding:10px 12px;font-size:.7rem;color:#bdb8da;line-height:1.55;cursor:pointer;transition:all .2s;text-align:left}
+.qchip:hover{border-color:var(--gold);background:rgba(244,185,66,.08)}
+.out-txt{font-size:.8rem;color:var(--text);line-height:1.85;white-space:pre-wrap;font-family:var(--font-b)}
+.out-empty{color:var(--muted2);font-size:.74rem;font-style:italic;text-align:center;padding:16px 0}
+.streaming::after{content:'▋';animation:blink .7s step-end infinite;color:var(--gold)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+#bottomNav{position:fixed;bottom:44px;left:0;right:0;z-index:210;background:rgba(7,6,18,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:9px 14px;display:flex;align-items:center;gap:11px}
+.nav-btn{flex:1;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:var(--violet);border-radius:11px;padding:11px 8px;font-size:.74rem;font-weight:600;cursor:pointer;font-family:var(--font-b);transition:all .2s;text-align:center}
+.nav-btn:hover{background:rgba(167,139,250,.2)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.nav-prog{text-align:center;flex-shrink:0}
+.nav-prog .np-txt{font-size:.64rem;color:var(--muted);font-family:var(--font-m);margin-bottom:4px}
+.nav-prog .np-bar{width:96px;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.nav-prog .np-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:3px;transition:width .4s}
+
+.citations{position:relative;z-index:1;margin:0 14px 14px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
+.cit-ttl{font-family:var(--font-d);font-size:.92rem;color:var(--text);margin-bottom:13px}
+.cit-item{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid rgba(28,24,52,.5)}
+.cit-item:last-child{border-bottom:none}
+.cn{width:23px;height:23px;border-radius:50%;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.28);color:var(--violet);font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.cb .ctitle{font-size:.74rem;font-weight:600;color:var(--text);margin-bottom:3px}
+.cb .cdesc{font-size:.66rem;color:var(--muted);line-height:1.55}
+.cb a{font-size:.63rem;color:var(--cyan);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:4px}
+.cb a:hover{text-decoration:underline}
+.fb{font-size:.55rem;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:var(--green);padding:1px 6px;border-radius:8px;margin-left:5px}
+
+footer{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(7,6,18,.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:10px 16px;text-align:center}
+.ftxt{font-size:.58rem;color:var(--muted);letter-spacing:.08em;font-family:var(--font-d)}
+.ftxt span{color:var(--gold)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+@media(max-width:380px){.g2,.g3{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="o1 orb"></div><div class="o2 orb"></div><div class="o3 orb"></div>
+<div id="stars"></div><div id="prog"></div>
+
+<header>
+  <div class="badge"><span class="bdot"></span>🚀 AI EDUCATION SERIES</div>
+  <div class="ep">EP · 06</div>
+</header>
+
+<div class="hero">
+  <div class="hero-ep">🧬 Episode 6 · Neural Networks &amp; Backpropagation</div>
+  <h1><span class="a1">Neural Networks</span> &amp;<br><span class="a2">Back</span><span class="a3">propagation</span></h1>
+  <div class="hero-sub">How machines actually learn — built up neuron by neuron, with every number shown. Train a real network live, then go deeper with an optional AI tutor.</div>
+  <div class="legend">
+    <span class="leg leg-free"><span class="dot"></span>🆓 FREE · No API needed</span>
+    <span class="leg leg-ai"><span class="dot"></span>🤖 AI · Optional, your key</span>
+  </div>
+  <div style="font-size:.66rem;color:var(--muted);margin-top:9px">7 free interactive tabs teach everything · 1 optional AI tutor for deep dives</div>
+</div>
+
+<div class="scenario">
+  <div style="font-family:var(--font-d);font-size:.6rem;letter-spacing:.16em;color:var(--violet);margin-bottom:10px">🧭 ONE SCENARIO · EVERY TAB · REAL NUMBERS</div>
+  <div class="sc-query">
+    <div style="font-size:.6rem;color:var(--violet);font-family:var(--font-d);letter-spacing:.1em;margin-bottom:6px">🎯 OUR RUNNING EXAMPLE</div>
+    <div style="font-size:1rem;font-weight:600;color:var(--text);line-height:1.45;margin-bottom:5px">"Can a tiny neural network learn to predict if a student passes an exam — from hours studied and hours slept?"</div>
+    <div style="font-size:.74rem;color:var(--muted);line-height:1.65">One student: <span style="color:var(--cyan)">5 hrs studied</span>, <span style="color:var(--green)">7 hrs slept</span> → <span style="color:var(--gold)">passed?</span> We follow this exact example — with real, hand-verified numbers — through every step, then you train the full network yourself.</div>
+    <div class="sc-dot"></div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden">
+    <div style="font-size:.6rem;color:var(--violet);font-family:var(--font-d);letter-spacing:.1em;padding:11px 13px;border-bottom:1px solid var(--border)">📍 YOUR LEARNING PATH — tap any step to jump</div>
+    <div id="roadmap"></div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="content" id="content"></div>
+
+<div class="citations" id="cit">
+  <div class="cit-ttl">📚 Citations &amp; Free Resources</div>
+  <div class="cit-item"><div class="cn">1</div><div class="cb"><div class="ctitle">3Blue1Brown — Neural Networks Series <span class="fb">FREE</span></div><div class="cdesc">The most beautiful visual explanation of neural networks and backpropagation ever made. Watch all 4 chapters.</div><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank">🔗 3blue1brown.com — neural networks</a></div></div>
+  <div class="cit-item"><div class="cn">2</div><div class="cb"><div class="ctitle">Michael Nielsen — "Neural Networks and Deep Learning" <span class="fb">FREE BOOK</span></div><div class="cdesc">The definitive free online book. Chapter 2 derives backpropagation step by step — the same math we follow here.</div><a href="http://neuralnetworksanddeeplearning.com" target="_blank">🔗 neuralnetworksanddeeplearning.com</a></div></div>
+  <div class="cit-item"><div class="cn">3</div><div class="cb"><div class="ctitle">Andrej Karpathy — "Neural Networks: Zero to Hero" <span class="fb">FREE</span></div><div class="cdesc">Build backprop from scratch in Python with micrograd. The best hands-on follow-up to this episode.</div><a href="https://karpathy.ai/zero-to-hero.html" target="_blank">🔗 karpathy.ai/zero-to-hero</a></div></div>
+  <div class="cit-item"><div class="cn">4</div><div class="cb"><div class="ctitle">TensorFlow Playground <span class="fb">FREE</span></div><div class="cdesc">Interactive in-browser neural network — like our Playground tab but bigger. Experiment with layers, activations, learning rates.</div><a href="https://playground.tensorflow.org" target="_blank">🔗 playground.tensorflow.org</a></div></div>
+  <div class="cit-item"><div class="cn">5</div><div class="cb"><div class="ctitle">Rumelhart, Hinton &amp; Williams (1986) — original backprop paper <span class="fb">FREE</span></div><div class="cdesc">The Nature paper that popularised backpropagation and launched modern deep learning.</div><a href="https://www.nature.com/articles/323533a0" target="_blank">🔗 nature.com — learning by back-propagating errors</a></div></div>
+  <div class="cit-item"><div class="cn">6</div><div class="cb"><div class="ctitle">Stanford CS231n — Convolutional Neural Networks <span class="fb">FREE</span></div><div class="cdesc">Stanford's legendary course notes — backprop intuitions, activation comparisons, training recipes.</div><a href="https://cs231n.github.io" target="_blank">🔗 cs231n.github.io</a></div></div>
+  <div class="cit-item"><div class="cn">7</div><div class="cb"><div class="ctitle">DeepLearning.AI — Neural Networks &amp; Deep Learning <span class="fb">FREE TO AUDIT</span></div><div class="cdesc">Andrew Ng's foundational course — the structured curriculum version of everything here.</div><a href="https://www.deeplearning.ai/courses/deep-learning-specialization/" target="_blank">🔗 deeplearning.ai — deep learning specialization</a></div></div>
+  <div class="cit-item"><div class="cn">8</div><div class="cb"><div class="ctitle">Distill.pub — Visual Explanations of ML <span class="fb">FREE</span></div><div class="cdesc">Beautiful interactive articles on momentum, feature visualisation, and why neural networks work.</div><a href="https://distill.pub" target="_blank">🔗 distill.pub</a></div></div>
+</div>
+
+<div id="bottomNav">
+  <button class="nav-btn" id="prevBtn" onclick="navTab(-1)">← Prev</button>
+  <div class="nav-prog">
+    <div class="np-txt" id="navProgTxt">Step 1 of 8</div>
+    <div class="np-bar"><div class="np-fill" id="navProgFill" style="width:12%"></div></div>
+  </div>
+  <button class="nav-btn" id="nextBtn" onclick="navTab(1)">Next →</button>
+</div>
+
+<footer>
+  <div class="ftxt">🚀 AI EDUCATION SERIES · <span>Neural Networks &amp; Backpropagation</span> · Krishnamurthy Kandregula · INNOVATION LAB</div>
+</footer>
+
+<script>
+(()=>{const c=document.getElementById('stars');for(let i=0;i<60;i++){const s=document.createElement('div');s.className='star';const z=Math.random()*1.8+.4;s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*4+2).toFixed(1)}s;animation-delay:${(Math.random()*6).toFixed(1)}s`;c.appendChild(s);}})();
+window.addEventListener('scroll',()=>{const h=document.documentElement;document.getElementById('prog').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';});
+function dlCSV(n,c){const b=new Blob([c],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();}
+function safeSet(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+
+// tab meta — type: free or ai
+const TABMETA=[
+  {ico:'🧠',name:'What is a NN?',type:'free'},
+  {ico:'➡️',name:'Forward Pass',type:'free'},
+  {ico:'📐',name:'Activations',type:'free'},
+  {ico:'🎯',name:'Loss',type:'free'},
+  {ico:'🔄',name:'Backprop',type:'free'},
+  {ico:'📉',name:'Gradient Descent',type:'free'},
+  {ico:'🎮',name:'Playground',type:'free'},
+  {ico:'🤖',name:'AI Tutor',type:'ai'},
+];
+document.getElementById('tabs').innerHTML=TABMETA.map((t,i)=>`
+  <div class="tab ${t.type==='free'?'tfree':'tai'} ${i===0?'active':''}" onclick="showTab(${i})">
+    <div class="ti">${t.ico}</div><div class="tn">${t.name}</div>
+    <div class="tt ${t.type==='free'?'tt-free':'tt-ai'}">${t.type==='free'?'FREE':'AI'}</div>
+  </div>`).join('');
+
+const roadmapData=[
+  {n:1,col:'var(--violet)',icon:'🧠',title:'What is a Neural Network?',desc:'Neurons, weights, biases, layers — the brain analogy that actually helps.',type:'free'},
+  {n:2,col:'var(--cyan)',icon:'➡️',title:'Forward Propagation',desc:'Follow our student\'s numbers through the network — every multiplication shown.',type:'free'},
+  {n:3,col:'var(--green)',icon:'📐',title:'Activation Functions',desc:'Sigmoid, ReLU, tanh — why non-linearity matters, with live graphs.',type:'free'},
+  {n:4,col:'var(--gold)',icon:'🎯',title:'Loss Functions',desc:'Measuring how wrong the network is — MSE and cross-entropy with our numbers.',type:'free'},
+  {n:5,col:'var(--pink)',icon:'🔄',title:'Backpropagation',desc:'The chain rule in action — every gradient computed by hand, step by step.',type:'free'},
+  {n:6,col:'var(--orange)',icon:'📉',title:'Gradient Descent',desc:'Update the weights, watch the loss fall. Learning rates and epochs explained.',type:'free'},
+  {n:7,col:'var(--cyan)',icon:'🎮',title:'Live Playground',desc:'Train a real neural network in your browser — free, no API, watch it learn.',type:'free'},
+  {n:8,col:'var(--gold)',icon:'🤖',title:'AI Tutor (optional)',desc:'Stuck? Ask Claude Haiku to explain any step using our exact numbers — with strict cost protection.',type:'ai'},
+];
+document.getElementById('roadmap').innerHTML=roadmapData.map((r,i)=>`
+  <div style="display:flex;gap:11px;padding:9px 13px;border-bottom:${i<roadmapData.length-1?'1px solid rgba(28,24,52,.7)':'none'};cursor:pointer;transition:background .2s" onmouseover="this.style.background='rgba(167,139,250,.04)'" onmouseout="this.style.background=''" onclick="showTab(${i})">
+    <div id="rm${i}" style="width:25px;height:25px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid ${r.col};color:${r.col};font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${r.n}</div>
+    <div style="flex:1"><div style="font-size:.76rem;font-weight:600;color:${r.col};margin-bottom:1px">${r.icon} ${r.title} ${r.type==='ai'?'<span style="font-size:.52rem;background:rgba(244,185,66,.14);color:var(--ai);padding:1px 6px;border-radius:6px;font-weight:700;margin-left:3px">AI</span>':'<span style="font-size:.52rem;background:rgba(74,222,128,.12);color:var(--free);padding:1px 6px;border-radius:6px;font-weight:700;margin-left:3px">FREE</span>'}</div><div style="font-size:.66rem;color:var(--muted);line-height:1.5">${r.desc}</div></div>
+  </div>`).join('');
+
+const visited=new Set();
+const freeBanner=`<div class="mode-banner mode-free"><span class="mode-ico">🆓</span><div><div class="mode-ttl" style="color:var(--free)">FREE INTERACTIVE LESSON</div><div class="mode-sub">No API key · No cost · Works offline · Real verified numbers</div></div><div class="mode-tag" style="background:rgba(74,222,128,.15);color:var(--free)">FREE ✓</div></div>`;
+
+const tabs=[
+
+// 0 — WHAT IS A NN
+{render:()=>`
+<div class="card">
+  ${freeBanner}
+  <div class="card-title">🧠 What is a Neural Network? <span class="pill pill-v">From Neuron to Network</span></div>
+  <div class="card-desc">A neural network is a stack of simple math units — neurons — that together learn almost any pattern. Each neuron does three things: multiply inputs by weights, add a bias, squash through an activation. Stack enough and you get GPT, image recognition, self-driving cars.</div>
+
+  <div class="cbox">
+    <div class="clabel">🔬 ONE NEURON — THE ENTIRE FORMULA</div>
+    <div class="cbody"><span class="sym">output</span> = <span class="fn">activation</span>( <span class="kw">w₁</span>·x₁ + <span class="kw">w₂</span>·x₂ + … + <span class="kw">b</span> )
+
+<span class="cmt">// w (weights) = how much each input matters (learned!)</span>
+<span class="cmt">// b (bias)    = the neuron's baseline tendency (learned!)</span>
+<span class="cmt">// activation  = adds non-linearity (sigmoid, ReLU…)</span></div>
+  </div>
+
+  <div class="slabel">🕸️ OUR SCENARIO NETWORK — 2 → 2 → 1</div>
+  <div style="background:#0a0818;border:1px solid var(--border2);border-radius:13px;padding:10px;margin-bottom:14px">
+    <svg viewBox="0 0 340 190" style="width:100%;display:block">
+      <line x1="60" y1="60" x2="170" y2="55" stroke="#a78bfa" stroke-width="2" opacity=".7"/>
+      <line x1="60" y1="60" x2="170" y2="135" stroke="#a78bfa" stroke-width="1.4" opacity=".5"/>
+      <line x1="60" y1="130" x2="170" y2="55" stroke="#22d3ee" stroke-width="1.8" opacity=".6"/>
+      <line x1="60" y1="130" x2="170" y2="135" stroke="#22d3ee" stroke-width="1.2" opacity=".45"/>
+      <line x1="170" y1="55" x2="280" y2="95" stroke="#f472b6" stroke-width="2" opacity=".7"/>
+      <line x1="170" y1="135" x2="280" y2="95" stroke="#f472b6" stroke-width="2.3" opacity=".8"/>
+      <circle cx="60" cy="60" r="21" fill="rgba(34,211,238,.12)" stroke="#22d3ee" stroke-width="2"/>
+      <circle cx="60" cy="130" r="21" fill="rgba(34,211,238,.12)" stroke="#22d3ee" stroke-width="2"/>
+      <circle cx="170" cy="55" r="21" fill="rgba(167,139,250,.12)" stroke="#a78bfa" stroke-width="2"/>
+      <circle cx="170" cy="135" r="21" fill="rgba(167,139,250,.12)" stroke="#a78bfa" stroke-width="2"/>
+      <circle cx="280" cy="95" r="23" fill="rgba(244,114,182,.12)" stroke="#f472b6" stroke-width="2.5"/>
+      <text x="60" y="64" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="700">x₁</text>
+      <text x="60" y="134" text-anchor="middle" fill="#22d3ee" font-size="12" font-weight="700">x₂</text>
+      <text x="170" y="59" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">h₁</text>
+      <text x="170" y="139" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">h₂</text>
+      <text x="280" y="99" text-anchor="middle" fill="#f472b6" font-size="12" font-weight="700">ŷ</text>
+      <text x="60" y="24" text-anchor="middle" fill="#7a7499" font-size="8.5">INPUTS</text>
+      <text x="170" y="24" text-anchor="middle" fill="#7a7499" font-size="8.5">HIDDEN</text>
+      <text x="280" y="24" text-anchor="middle" fill="#7a7499" font-size="8.5">OUTPUT</text>
+      <text x="60" y="175" text-anchor="middle" fill="#22d3ee" font-size="8">study · sleep</text>
+      <text x="280" y="175" text-anchor="middle" fill="#f472b6" font-size="8">P(pass)</text>
+    </svg>
+  </div>
+
+  <div class="g3">
+    <div class="gi"><div class="gicon">⚖️</div><div class="gname" style="color:var(--cyan)">Weights</div><div class="gdesc">Importance of each connection. LEARNED — 6 in our net</div></div>
+    <div class="gi"><div class="gicon">🎚️</div><div class="gname" style="color:var(--violet)">Biases</div><div class="gdesc">Each neuron's baseline. LEARNED — 3 here</div></div>
+    <div class="gi"><div class="gicon">🌊</div><div class="gname" style="color:var(--pink)">Activations</div><div class="gdesc">Non-linear squash. Without them: 100 layers = 1</div></div>
+  </div>
+
+  <div style="background:rgba(244,185,66,.05);border:1px solid rgba(244,185,66,.25);border-radius:13px;padding:14px;margin-bottom:14px">
+    <div style="font-size:.62rem;letter-spacing:.13em;color:var(--gold);font-family:var(--font-d);margin-bottom:10px">🎓 THE ANALOGY — A COMMITTEE OF TINY JUDGES</div>
+    <div style="font-size:.76rem;color:#bdb8da;line-height:1.8">Predicting "will this student pass?" with a committee. Each hidden neuron is a junior judge seeing the same evidence (study, sleep) but <b style="color:var(--text)">weighing it differently</b> — one cares about study time, another about rest. The output neuron is the senior judge combining their verdicts. <b style="color:var(--gold)">Training = adjusting how much each opinion counts, based on past mistakes.</b> That adjustment is backpropagation.</div>
+  </div>
+
+  <div class="tlabel">📋 OUR TRAINING DATA — 8 STUDENTS <button class="dlbtn" onclick="dlCSV('student_data.csv','Study_Hours,Sleep_Hours,Passed\\n5,7,1\\n8,6,1\\n2,8,0\\n7,7,1\\n1,4,0\\n6,5,1\\n3,6,0\\n2,3,0\\n')">⬇ Download CSV</button></div>
+  <div class="twrap"><table>
+    <thead><tr><th>Study Hrs</th><th>Sleep Hrs</th><th>Passed?</th></tr></thead>
+    <tbody>
+      <tr><td class="hl">5 ⭐</td><td class="hl">7 ⭐</td><td class="ok">✅ 1 (our example)</td></tr>
+      <tr><td>8</td><td>6</td><td class="ok">✅ 1</td></tr>
+      <tr><td>2</td><td>8</td><td class="bad">❌ 0</td></tr>
+      <tr><td>7</td><td>7</td><td class="ok">✅ 1</td></tr>
+      <tr><td>1</td><td>4</td><td class="bad">❌ 0</td></tr>
+      <tr><td>6</td><td>5</td><td class="ok">✅ 1</td></tr>
+      <tr><td>3</td><td>6</td><td class="bad">❌ 0</td></tr>
+      <tr><td>2</td><td>3</td><td class="bad">❌ 0</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="rbox"><div class="rlbl">✅ THE BIG IDEA</div><div class="rval">Network = function with adjustable knobs<br>Learning = turning knobs to reduce mistakes</div><div class="rdesc">Our tiny network has 9 knobs (6 weights + 3 biases). GPT-4 has ~1.8 trillion. The learning algorithm — backprop + gradient descent — is identical. Master it on 9 knobs and you understand all of deep learning.</div></div>
+  <div class="insight"><div class="ititle">💡 WHY "NEURAL"?</div><div class="itext">Inspired by brain neurons (inputs → fire/don't fire), but the resemblance ends there. Think of artificial neurons as "weighted voting units" — the brain metaphor builds intuition, the math does the work.</div></div>
+</div>`},
+
+// 1 — FORWARD PASS
+{render:()=>`
+<div class="card">
+  ${freeBanner}
+  <div class="card-title">➡️ Forward Propagation <span class="pill pill-c">Every Number Shown</span></div>
+  <div class="card-desc">Forward propagation is the network making a prediction: data flows left to right, each neuron computes its weighted sum + activation, until the output appears. Let's push our student — 5 hrs study, 7 hrs sleep — through the whole network by hand.</div>
+
+  <div class="cbox">
+    <div class="clabel">🔢 SETUP — INPUTS &amp; INITIAL WEIGHTS</div>
+    <div class="cbody"><span class="cmt">// Inputs (normalised: hours ÷ 10)</span>
+x₁ = <span class="num">0.5</span>   <span class="cmt">(5 hrs studied)</span>
+x₂ = <span class="num">0.7</span>   <span class="cmt">(7 hrs slept)</span>
+y  = <span class="num">1</span>     <span class="cmt">(target: passed!)</span>
+
+<span class="sym">Input → Hidden:</span>  w₁=<span class="num">0.3</span> w₂=<span class="num">0.5</span> w₃=<span class="num">0.4</span> w₄=<span class="num">0.2</span> b₁=b₂=<span class="num">0.1</span>
+<span class="sym">Hidden → Output:</span> w₅=<span class="num">0.6</span> w₆=<span class="num">0.8</span> b₃=<span class="num">0.2</span></div>
+  </div>
+
+  <div class="slabel">🧪 THE FORWARD PASS — STEP BY STEP</div>
+  <div class="step"><div class="sn">1</div><div class="sb"><div class="st">Hidden neuron h₁ — weighted sum</div><div class="sd">Multiply each input by its weight, add the bias</div><code class="sc">z₁ = w₁·x₁ + w₂·x₂ + b₁
+   = 0.3·0.5 + 0.5·0.7 + 0.1 = 0.60</code></div></div>
+  <div class="step"><div class="sn">2</div><div class="sb"><div class="st">Hidden neuron h₁ — activation (sigmoid)</div><div class="sd">Squash z₁ into (0,1) — the neuron's "opinion strength"</div><code class="sc">h₁ = σ(0.60) = 1/(1+e⁻⁰·⁶⁰) = 0.6457</code></div></div>
+  <div class="step"><div class="sn">3</div><div class="sb"><div class="st">Hidden neuron h₂ — same recipe</div><div class="sd">Different weights = different opinion on the same inputs</div><code class="sc">z₂ = 0.4·0.5 + 0.2·0.7 + 0.1 = 0.44
+h₂ = σ(0.44) = 0.6083</code></div></div>
+  <div class="step"><div class="sn">4</div><div class="sb"><div class="st">Output neuron — weigh the hidden opinions</div><div class="sd">The senior judge combines h₁ and h₂</div><code class="sc">z₃ = w₅·h₁ + w₆·h₂ + b₃
+   = 0.6·0.6457 + 0.8·0.6083 + 0.2 = 1.0740</code></div></div>
+  <div class="step"><div class="sn">5</div><div class="sb"><div class="st">Final prediction</div><div class="sd">Sigmoid turns the score into a probability</div><code class="sc">ŷ = σ(1.0740) = 0.7454
+→ Network says: 74.5% chance this student passes</code></div></div>
+
+  <div class="tlabel">📋 FORWARD PASS TRACE <button class="dlbtn" onclick="dlCSV('forward_pass.csv','Step,Computation,Result\\n1,z1=0.3*0.5+0.5*0.7+0.1,0.60\\n2,h1=sigmoid(0.60),0.6457\\n3,z2=0.4*0.5+0.2*0.7+0.1,0.44\\n4,h2=sigmoid(0.44),0.6083\\n5,z3=0.6*h1+0.8*h2+0.2,1.0740\\n6,yhat=sigmoid(1.0740),0.7454\\n')">⬇ Download CSV</button></div>
+  <div class="twrap"><table>
+    <thead><tr><th>Step</th><th>Computation</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td class="hl">z₁ = 0.3·0.5 + 0.5·0.7 + 0.1</td><td class="ok">0.60</td></tr>
+      <tr><td>2</td><td class="hl">h₁ = σ(0.60)</td><td class="ok">0.6457</td></tr>
+      <tr><td>3</td><td class="hl">z₂ = 0.4·0.5 + 0.2·0.7 + 0.1</td><td class="ok">0.44</td></tr>
+      <tr><td>4</td><td class="hl">h₂ = σ(0.44)</td><td class="ok">0.6083</td></tr>
+      <tr><td>5</td><td class="hl">z₃ = 0.6·h₁ + 0.8·h₂ + 0.2</td><td class="ok">1.0740</td></tr>
+      <tr><td>6</td><td class="hl">ŷ = σ(1.0740)</td><td class="ok">0.7454</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="rbox"><div class="rlbl">✅ PREDICTION vs TRUTH</div><div class="rval">ŷ = 0.7454 · target y = 1 · error = 0.2546</div><div class="rdesc">The network thinks 74.5% pass — right direction, not confident enough. The next tabs close that gap: measure it (Loss), trace blame backwards (Backprop), fix the weights (Gradient Descent).</div></div>
+  <div class="insight"><div class="ititle">💡 IT'S JUST MATRIX MULTIPLICATION</div><div class="itext">In real code, the per-neuron arithmetic becomes one line: h = σ(W·x + b). GPUs are fast at exactly this — which is why deep learning took off when GPUs arrived.</div></div>
+</div>`},
+
+// 2 — ACTIVATIONS
+{render:()=>`
+<div class="card">
+  ${freeBanner}
+  <div class="card-title">📐 Activation Functions <span class="pill pill-g">Why Non-Linearity Matters</span></div>
+  <div class="card-desc">Without activations, stacking layers is pointless — ten linear layers collapse into one. Activations bend the math, letting networks learn curves and messy real-world patterns. Tap each to see its shape and derivative.</div>
+
+  <div style="background:#0a0818;border:1px solid var(--border2);border-radius:13px;padding:11px;margin-bottom:14px">
+    <canvas id="actCanvas" class="pg" height="200"></canvas>
+    <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap" id="actBtns">
+      <button class="pg-btn2" style="flex:1;min-width:70px" onclick="drawActivation('sigmoid',this)">Sigmoid</button>
+      <button class="pg-btn2" style="flex:1;min-width:70px" onclick="drawActivation('relu',this)">ReLU</button>
+      <button class="pg-btn2" style="flex:1;min-width:70px" onclick="drawActivation('tanh',this)">Tanh</button>
+      <button class="pg-btn2" style="flex:1;min-width:70px" onclick="drawActivation('leaky',this)">Leaky ReLU</button>
+    </div>
+    <div id="actDesc" style="font-size:.72rem;color:#bdb8da;line-height:1.7;margin-top:10px;background:rgba(167,139,250,.05);border-radius:9px;padding:11px"></div>
+  </div>
+
+  <div class="tlabel">📋 ACTIVATION CHEAT SHEET <button class="dlbtn" onclick="dlCSV('activations.csv','Function,Range,Best_For,Watch_Out\\nSigmoid,(0:1),Binary output layer,Vanishing gradients\\nReLU,[0:inf),Hidden layers default,Dead neurons\\nTanh,(-1:1),Zero-centered hidden,Saturates at extremes\\nLeaky ReLU,(-inf:inf),Fixing dead ReLUs,Extra parameter\\nSoftmax,sums to 1,Multi-class output,Output layer only\\n')">⬇ Download CSV</button></div>
+  <div class="twrap"><table>
+    <thead><tr><th>Function</th><th>Range</th><th>Best For</th><th>Watch Out</th></tr></thead>
+    <tbody>
+      <tr><td class="hl">Sigmoid</td><td>(0, 1)</td><td>Binary output (ours!)</td><td class="warn">Vanishing gradients</td></tr>
+      <tr><td class="hl">ReLU</td><td>[0, ∞)</td><td class="ok">Hidden layers — default</td><td class="warn">Dead neurons</td></tr>
+      <tr><td class="hl">Tanh</td><td>(−1, 1)</td><td>Zero-centred hidden</td><td class="warn">Saturates</td></tr>
+      <tr><td class="hl">Leaky ReLU</td><td>(−∞, ∞)</td><td>Fixing dead ReLUs</td><td>Extra param</td></tr>
+      <tr><td class="hl">Softmax</td><td>sums to 1</td><td>Multi-class output</td><td>Output only</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="rbox"><div class="rlbl">✅ WHY OUR NETWORK USES SIGMOID</div><div class="rval">σ(z) = 1/(1+e⁻ᶻ) → a clean probability (0,1)</div><div class="rdesc">Our task is binary (pass/fail), so sigmoid at the output gives an interpretable probability. We also use it in the hidden layer because its derivative σ(z)·(1−σ(z)) is simple — making the backprop math easy to follow. In production hidden layers, you'd use ReLU.</div></div>
+  <div class="insight"><div class="ititle">💡 THE DERIVATIVE IS THE POINT</div><div class="itext">Backprop needs each activation's derivative. Sigmoid's max is just 0.25 — multiply many across deep layers and gradients vanish (Tab 5 shows this starting). ReLU's derivative is exactly 1 for positive inputs — gradients flow untouched. That single property enabled deep networks.</div></div>
+</div>`},
+
+// 3 — LOSS
+{render:()=>`
+<div class="card">
+  ${freeBanner}
+  <div class="card-title">🎯 Loss Functions <span class="pill pill-gold">Measuring Wrongness</span></div>
+  <div class="card-desc">A loss function turns "the network is wrong" into a single number. Smaller = better. Training is literally: compute the loss, adjust weights to shrink it. Let's compute ours.</div>
+
+  <div class="cbox">
+    <div class="clabel">🔬 MSE LOSS — OUR STUDENT</div>
+    <div class="cbody"><span class="sym">L</span> = ½(y − ŷ)²
+  = ½(<span class="num">1</span> − <span class="num">0.7454</span>)²
+  = ½(<span class="num">0.2546</span>)²
+  = <span class="num">0.0324</span>
+
+<span class="cmt">// The ½ cancels the 2 from the derivative,</span>
+<span class="cmt">// keeping backprop math clean.</span></div>
+  </div>
+
+  <div class="g2">
+    <div class="gi" style="text-align:left;padding:13px"><div style="font-size:.66rem;font-weight:700;color:var(--cyan);margin-bottom:7px">📏 MSE</div><div style="font-size:.7rem;color:var(--muted);line-height:1.7">L = ½(y−ŷ)²<br>Squaring punishes big errors much more. Great for regression and for learning backprop (simple derivative). We use it here for clarity.</div></div>
+    <div class="gi" style="text-align:left;padding:13px"><div style="font-size:.66rem;font-weight:700;color:var(--pink);margin-bottom:7px">📉 Cross-Entropy</div><div style="font-size:.7rem;color:var(--muted);line-height:1.7">−[y·log ŷ + (1−y)·log(1−ŷ)]<br>The production standard for classification — punishes confident wrong answers brutally. Ours: −log(0.7454) = 0.294.</div></div>
+  </div>
+
+  <div class="tlabel">📋 HOW WRONG PREDICTIONS COST <button class="dlbtn" onclick="dlCSV('loss_comparison.csv','Prediction,Target,MSE,CrossEntropy,Verdict\\n0.95,1,0.0013,0.051,Excellent\\n0.7454,1,0.0324,0.294,Our network now\\n0.50,1,0.125,0.693,Coin flip\\n0.05,1,0.451,2.996,Confidently wrong\\n')">⬇ Download CSV</button></div>
+  <div class="twrap"><table>
+    <thead><tr><th>Prediction ŷ</th><th>Target</th><th>MSE</th><th>Cross-Ent</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td>0.95</td><td>1</td><td class="ok">0.0013</td><td class="ok">0.051</td><td class="ok">Excellent</td></tr>
+      <tr><td class="hl">0.7454 ⭐</td><td>1</td><td class="warn">0.0324</td><td class="warn">0.294</td><td class="warn">Our net now</td></tr>
+      <tr><td>0.50</td><td>1</td><td class="warn">0.125</td><td class="warn">0.693</td><td class="warn">Coin flip</td></tr>
+      <tr><td>0.05</td><td>1</td><td class="bad">0.451</td><td class="bad">2.996</td><td class="bad">Confidently wrong</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="rbox"><div class="rlbl">✅ OUR LOSS</div><div class="rval">L = 0.0324 — small, but not zero. Time to shrink it.</div><div class="rdesc">The loss is one number summarising every weight's collective failure. The genius of backprop: it tells us how much EACH of the 9 knobs contributed to this 0.0324 — so we know which way to turn each one.</div></div>
+  <div class="insight"><div class="ititle">💡 LOSS vs ACCURACY</div><div class="itext">Accuracy is what you care about; loss is what the network learns from. Accuracy is a step function — gives no direction. Loss is smooth — its slope (gradient) points toward improvement. We optimise loss and accuracy follows.</div></div>
+</div>`},
+
+// 4 — BACKPROP
+{render:()=>`
+<div class="card">
+  ${freeBanner}
+  <div class="card-title">🔄 Backpropagation <span class="pill pill-p">The Chain Rule, By Hand</span></div>
+  <div class="card-desc">Backprop answers: "If I nudge weight w a tiny bit, how much does the loss change?" That's a derivative — ∂L/∂w. The chain rule computes it for every weight by passing error signals backwards. Same student, real numbers, no steps skipped.</div>
+
+  <div class="cbox">
+    <div class="clabel">🔬 THE CHAIN RULE — WHY "BACK" PROPAGATION</div>
+    <div class="cbody"><span class="sym">∂L/∂w₅</span> = <span class="kw">∂L/∂ŷ</span> · <span class="kw">∂ŷ/∂z₃</span> · <span class="kw">∂z₃/∂w₅</span>
+
+<span class="cmt">// Each piece is simple. Multiply = done.</span>
+<span class="cmt">// Errors flow OUTPUT → HIDDEN → INPUT. Backwards.</span></div>
+  </div>
+
+  <div class="slabel">🧪 OUTPUT LAYER GRADIENTS</div>
+  <div class="step"><div class="sn">1</div><div class="sb"><div class="st">How loss changes with prediction</div><div class="sd">Derivative of L = ½(y−ŷ)²</div><code class="sc">∂L/∂ŷ = −(y − ŷ) = −(1 − 0.7454) = −0.2546</code></div></div>
+  <div class="step"><div class="sn">2</div><div class="sb"><div class="st">How prediction changes with z₃</div><div class="sd">Sigmoid's derivative: σ'(z) = σ(z)·(1−σ(z))</div><code class="sc">∂ŷ/∂z₃ = ŷ(1−ŷ) = 0.7454·0.2546 = 0.1898</code></div></div>
+  <div class="step"><div class="sn">3</div><div class="sb"><div class="st">Output error signal δ₃</div><div class="sd">The "blame" arriving at the output neuron</div><code class="sc">δ₃ = −0.2546 · 0.1898 = −0.04832</code></div></div>
+  <div class="step"><div class="sn">4</div><div class="sb"><div class="st">Gradients for output weights</div><div class="sd">Each weight's gradient = error signal × its input</div><code class="sc">∂L/∂w₅ = δ₃·h₁ = −0.04832·0.6457 = −0.03120
+∂L/∂w₆ = δ₃·h₂ = −0.04832·0.6083 = −0.02939
+∂L/∂b₃ = δ₃                       = −0.04832</code></div></div>
+
+  <div class="slabel" style="color:var(--pink)">🧪 HIDDEN LAYER — ERROR FLOWS BACKWARDS</div>
+  <div class="step"><div class="sn" style="border-color:var(--pink);color:var(--pink);background:rgba(244,114,182,.1)">5</div><div class="sb"><div class="st">Blame for h₁</div><div class="sd">δ₃ travels back through w₅, scaled by h₁'s sigmoid slope</div><code class="sc">δ₁ = δ₃·w₅·h₁(1−h₁)
+   = −0.04832·0.6·0.2288 = −0.00663</code></div></div>
+  <div class="step"><div class="sn" style="border-color:var(--pink);color:var(--pink);background:rgba(244,114,182,.1)">6</div><div class="sb"><div class="st">Blame for h₂</div><div class="sd">Same recipe through w₆</div><code class="sc">δ₂ = δ₃·w₆·h₂(1−h₂)
+   = −0.04832·0.8·0.2383 = −0.00921</code></div></div>
+  <div class="step"><div class="sn" style="border-color:var(--pink);color:var(--pink);background:rgba(244,114,182,.1)">7</div><div class="sb"><div class="st">Gradients for input weights</div><div class="sd">Error signal × input — same pattern as step 4</div><code class="sc">∂L/∂w₁ = δ₁·x₁ = −0.00332    ∂L/∂w₃ = δ₂·x₁ = −0.00461
+∂L/∂w₂ = δ₁·x₂ = −0.00464    ∂L/∂w₄ = δ₂·x₂ = −0.00645</code></div></div>
+
+  <div class="tlabel">📋 ALL 9 GRADIENTS <button class="dlbtn" onclick="dlCSV('gradients.csv','Parameter,Gradient,Formula\\nw5,-0.03120,delta3*h1\\nw6,-0.02939,delta3*h2\\nb3,-0.04832,delta3\\nw1,-0.00332,delta1*x1\\nw2,-0.00464,delta1*x2\\nw3,-0.00461,delta2*x1\\nw4,-0.00645,delta2*x2\\nb1,-0.00663,delta1\\nb2,-0.00921,delta2\\n')">⬇ Download CSV</button></div>
+  <div class="twrap"><table>
+    <thead><tr><th>Parameter</th><th>Gradient</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td class="hl">w₅</td><td class="ok">−0.03120</td><td>Biggest output lever</td></tr>
+      <tr><td class="hl">w₆</td><td class="ok">−0.02939</td><td>Second output lever</td></tr>
+      <tr><td class="hl">b₃</td><td class="ok">−0.04832</td><td>Output bias — largest</td></tr>
+      <tr><td class="hl">w₁–w₄</td><td class="warn">−0.003…−0.006</td><td>Input weights — ~10× smaller!</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="rbox"><div class="rlbl">✅ READ THE SIGNS</div><div class="rval">All gradients negative → raising any weight LOWERS the loss</div><div class="rdesc">Our prediction (0.7454) is too LOW (target 1), so pushing weights up pushes the prediction up. Note: input-layer gradients are ~10× smaller than output-layer ones — that shrinkage across many layers is the vanishing gradient problem (Tab 7… see Playground experiments).</div></div>
+  <div class="insight"><div class="ititle">💡 BACKPROP IS JUST BOOKKEEPING</div><div class="itext">Nothing mystical: we applied the chain rule, reusing δ values so nothing is computed twice. That reuse makes computing all gradients cost about the same as ONE forward pass — whether 9 parameters or 1.8 trillion.</div></div>
+</div>`},
+
+// 5 — GRADIENT DESCENT
+{render:()=>`
+<div class="card">
+  ${freeBanner}
+  <div class="card-title">📉 Gradient Descent <span class="pill pill-c">Turning Knobs Downhill</span></div>
+  <div class="card-desc">We know each weight's gradient — the direction that increases loss. So we step the opposite way: new weight = old − learning rate × gradient. Let's update all 9 parameters and verify the loss drops.</div>
+
+  <div class="cbox">
+    <div class="clabel">🔬 THE UPDATE RULE (η = 0.5)</div>
+    <div class="cbody"><span class="sym">w_new</span> = w_old − <span class="kw">η</span> · ∂L/∂w
+
+w₅: <span class="num">0.6</span> − 0.5·(−0.03120) = <span class="num">0.6156</span> ↑
+w₆: <span class="num">0.8</span> − 0.5·(−0.02939) = <span class="num">0.8147</span> ↑
+b₃: <span class="num">0.2</span> − 0.5·(−0.04832) = <span class="num">0.2242</span> ↑
+<span class="cmt">… and the same for w₁–w₄, b₁, b₂ (all rise)</span></div>
+  </div>
+
+  <div class="slabel">🧪 PROOF IT WORKED — RE-RUN FORWARD PASS</div>
+  <div class="step"><div class="sn">1</div><div class="sb"><div class="st">Forward pass with updated weights</div><div class="sd">Same student, new knob positions</div><code class="sc">new ŷ ≈ 0.7530   (was 0.7454)</code></div></div>
+  <div class="step"><div class="sn">2</div><div class="sb"><div class="st">New loss</div><div class="sd">Closer to target 1 → loss falls</div><code class="sc">new L = ½(1−0.7530)² ≈ 0.0305   (was 0.0324)
+loss dropped ~6% in ONE step ✅</code></div></div>
+  <div class="step"><div class="sn">3</div><div class="sb"><div class="st">Repeat — that's training</div><div class="sd">Loop forward → loss → backprop → update. One pass through all data = one epoch</div><code class="sc">for epoch in range(500):
+    for (x, y) in dataset:
+        ŷ = forward(x); grads = backprop(ŷ, y)
+        weights -= η * grads
+# After ~500 epochs: ŷ → 0.95 ✅</code></div></div>
+
+  <div class="g3">
+    <div class="gi"><div class="gicon">🐌</div><div class="gname" style="color:var(--cyan)">η too small</div><div class="gdesc">0.01 — crawls, needs 50× more epochs</div></div>
+    <div class="gi"><div class="gicon">✅</div><div class="gname" style="color:var(--green)">η just right</div><div class="gdesc">0.5 — steady descent, our choice</div></div>
+    <div class="gi"><div class="gicon">💥</div><div class="gname" style="color:var(--red)">η too big</div><div class="gdesc">10 — overshoots, bounces, diverges</div></div>
+  </div>
+
+  <div class="tlabel">📋 TRAINING CURVE — 500 EPOCHS <button class="dlbtn" onclick="dlCSV('training_curve.csv','Epoch,Loss,Prediction\\n0,0.0324,0.7454\\n100,0.0118,0.847\\n200,0.0052,0.898\\n300,0.0027,0.927\\n500,0.0010,0.955\\n')">⬇ Download CSV</button></div>
+  <div class="twrap"><table>
+    <thead><tr><th>Epoch</th><th>Loss</th><th>ŷ (our student)</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td class="bad">0.0324</td><td>0.7454</td></tr>
+      <tr><td>100</td><td class="warn">0.0118</td><td>0.847</td></tr>
+      <tr><td>300</td><td class="ok">0.0027</td><td>0.927</td></tr>
+      <tr><td>500</td><td class="ok">0.0010</td><td class="ok">0.955 ✅</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="rbox"><div class="rlbl">✅ THE COMPLETE LEARNING LOOP</div><div class="rval">Forward → Loss → Backprop → Update → repeat</div><div class="rdesc">That four-beat rhythm is ALL of deep learning. GPT training runs this exact loop — just with trillions of parameters and smarter optimisers (Adam). See it live in the next tab.</div></div>
+  <div class="insight"><div class="ititle">💡 STOCHASTIC vs MINI-BATCH vs FULL-BATCH</div><div class="itext">Update after every example (stochastic — noisy, fast), the whole dataset (full-batch — smooth, slow), or small groups (mini-batch — the production standard, 32–512 examples, maps perfectly onto GPUs).</div></div>
+</div>`},
+
+// 6 — PLAYGROUND
+{render:()=>`
+<div class="card">
+  ${freeBanner}
+  <div class="card-title">🎮 Live Training Playground <span class="pill pill-g">Real Backprop · In-Browser</span></div>
+  <div class="card-desc">The real thing — the exact 2→2→1 network from our scenario, in JavaScript, training on the 8 students with genuine backpropagation. No API, no cost, no simulation. Press Train and watch it learn.</div>
+
+  <div style="background:rgba(74,222,128,.05);border:2px solid rgba(74,222,128,.3);border-radius:15px;padding:15px;margin-bottom:13px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:1.1rem">🎓</span>
+      <div style="font-family:var(--font-d);font-size:.78rem;color:var(--green)">REAL BACKPROP · 100% FREE · IN-BROWSER</div>
+      <div style="margin-left:auto;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.4);color:var(--green);font-size:.6rem;padding:3px 10px;border-radius:11px;font-weight:700">FREE ✓</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><div style="font-size:.64rem;color:var(--muted);margin-bottom:5px">Learning rate η: <span id="lrVal" style="color:var(--violet);font-family:var(--font-m)">0.5</span></div><input type="range" id="lrSlider" min="-2" max="1" step="0.05" value="-0.301" oninput="updateLR(this.value)"/></div>
+      <div><div style="font-size:.64rem;color:var(--muted);margin-bottom:5px">Epochs/click: <span id="epVal" style="color:var(--cyan);font-family:var(--font-m)">100</span></div><input type="range" id="epSlider" min="10" max="500" step="10" value="100" oninput="safeSet('epVal',this.value)"/></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="pg-btn" onclick="trainNetwork()">▶ Train</button>
+      <button class="pg-btn2" onclick="stepOnce()">+1 Step</button>
+      <button class="pg-btn2" onclick="resetNetwork()">↺ Reset</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:9px;text-align:center"><div id="pgEpoch" style="font-family:var(--font-m);font-size:.92rem;font-weight:600;color:var(--violet)">0</div><div style="font-size:.56rem;color:var(--muted)">Epoch</div></div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:9px;text-align:center"><div id="pgLoss" style="font-family:var(--font-m);font-size:.92rem;font-weight:600;color:var(--pink)">—</div><div style="font-size:.56rem;color:var(--muted)">Avg Loss</div></div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:9px;text-align:center"><div id="pgAcc" style="font-family:var(--font-m);font-size:.92rem;font-weight:600;color:var(--green)">—</div><div style="font-size:.56rem;color:var(--muted)">Accuracy</div></div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:9px;text-align:center"><div id="pgPred" style="font-family:var(--font-m);font-size:.92rem;font-weight:600;color:var(--gold)">—</div><div style="font-size:.56rem;color:var(--muted)">ŷ student</div></div>
+    </div>
+
+    <div style="font-size:.6rem;color:var(--muted);font-family:var(--font-d);letter-spacing:.1em;margin-bottom:6px">📉 LOSS CURVE — WATCH IT LEARN</div>
+    <canvas id="lossCanvas" class="pg" height="150" style="margin-bottom:12px"></canvas>
+
+    <div style="font-size:.6rem;color:var(--muted);font-family:var(--font-d);letter-spacing:.1em;margin-bottom:6px">🕸️ LIVE NETWORK — thickness = |weight|, green = +, red = −</div>
+    <canvas id="netCanvas" class="pg" height="180" style="margin-bottom:12px"></canvas>
+
+    <div style="font-size:.6rem;color:var(--muted);font-family:var(--font-d);letter-spacing:.1em;margin-bottom:6px">🎓 PREDICTIONS — all 8 students</div>
+    <div id="predTable"></div>
+  </div>
+
+  <div class="g2">
+    <div class="gi" style="text-align:left;padding:12px"><div style="font-size:.66rem;font-weight:700;color:var(--cyan);margin-bottom:6px">🧪 EXPERIMENT 1 — Chaos</div><div style="font-size:.68rem;color:var(--muted);line-height:1.65">Set η to ~8, reset, train. Watch the loss bounce instead of fall — overshooting in real time. Then try η = 0.01 and see the crawl.</div></div>
+    <div class="gi" style="text-align:left;padding:12px"><div style="font-size:.66rem;font-weight:700;color:var(--green);margin-bottom:6px">🧪 EXPERIMENT 2 — Weights</div><div style="font-size:.68rem;color:var(--muted);line-height:1.65">Use +1 Step repeatedly and watch the network diagram — connections thicken as the network grows confident about what matters.</div></div>
+  </div>
+
+  <div class="insight"><div class="ititle">💡 WHAT YOU'RE ACTUALLY WATCHING</div><div class="itext">Every Train click runs the EXACT math from Tabs 1–5: forward pass per student, MSE loss, hand-derived gradients, η-scaled updates. The code is ~40 lines of JavaScript — view source to read it. Follow it, and you understand deep learning's engine.</div></div>
+</div>`},
+
+// 7 — AI TUTOR
+{render:()=>`
+<div class="card">
+  <div class="mode-banner mode-ai"><span class="mode-ico">🤖</span><div><div class="mode-ttl" style="color:var(--ai)">OPTIONAL AI TUTOR</div><div class="mode-sub">Needs your Anthropic API key · You control the cost · Strict guardrails on</div></div><div class="mode-tag" style="background:rgba(244,185,66,.15);color:var(--ai)">YOUR KEY</div></div>
+
+  <div class="card-title">🤖 AI Tutor <span class="pill pill-gold">Claude Haiku 4.5</span></div>
+  <div class="card-desc">Everything you need is in the 7 free tabs. But if you want to go deeper — ask Claude. The tutor knows this episode's exact scenario and numbers, so it explains using OUR student, OUR weights, OUR gradients.</div>
+
+  <!-- distinct AI cost panel -->
+  <div style="background:rgba(244,185,66,.05);border:1px solid rgba(244,185,66,.28);border-radius:13px;padding:12px 14px;margin-bottom:14px">
+    <div style="font-size:.62rem;color:var(--gold);font-family:var(--font-d);letter-spacing:.1em;margin-bottom:8px">🛡️ TOKEN-SAVING GUARDRAILS (always on)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+      ${[['Single question','no loops, no agent recursion'],['max_tokens = 600','caps verbose answers'],['$0.20 session cap','hard stop protects budget'],['Cheap model default','Haiku unless you choose deeper']].map(g=>`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:8px"><div style="font-size:.66rem;font-weight:600;color:var(--text)">${g[0]}</div><div style="font-size:.58rem;color:var(--muted);margin-top:1px">${g[1]}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <div style="background:rgba(10,8,24,.9);border:1px solid rgba(244,185,66,.25);border-radius:14px;padding:15px">
+    <div style="font-size:.6rem;letter-spacing:.1em;color:var(--muted);font-family:var(--font-d);margin-bottom:6px">🔑 ANTHROPIC API KEY</div>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input class="api-inp" id="apiKey" type="password" placeholder="sk-ant-api03-..." autocomplete="off"/>
+      <button class="pg-btn2" style="white-space:nowrap;padding:9px 12px;font-size:.66rem" onclick="document.getElementById('apiKey').type=document.getElementById('apiKey').type==='password'?'text':'password'">👁</button>
+    </div>
+    <div style="font-size:.6rem;color:var(--muted2);margin-bottom:13px">🔒 Stays in your browser — only sent to api.anthropic.com · free key at console.anthropic.com</div>
+
+    <div style="font-size:.6rem;letter-spacing:.1em;color:var(--muted);font-family:var(--font-d);margin-bottom:7px">🤖 MODEL</div>
+    <div style="background:rgba(74,222,128,.08);border:2px solid rgba(74,222,128,.4);border-radius:11px;padding:12px;margin-bottom:7px">
+      <div style="font-size:.74rem;font-weight:700;color:var(--green)">⚡ Claude Haiku 4.5</div>
+      <div style="font-size:.58rem;color:var(--muted);margin-top:2px">$1/$5 per MTok · fast, cheap &amp; perfect for learning explanations</div>
+    </div>
+    <div id="modelNote" style="font-size:.64rem;color:#bdb8da;background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:9px;padding:9px 11px;margin-bottom:13px;line-height:1.6">⚡ This tutor uses Haiku 4.5 — Anthropic's fast, low-cost model. It's ideal for clear, quick explanations of any step, and the $0.20 cap stretches across many questions.</div>
+
+    <div style="font-size:.6rem;letter-spacing:.1em;color:var(--muted);font-family:var(--font-d);margin-bottom:7px">💬 SUGGESTED QUESTIONS — tap to load</div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
+      <button class="qchip" onclick="loadQ(this)">Why is the gradient for w₁ ten times smaller than w₅ in our example? Use our actual numbers.</button>
+      <button class="qchip" onclick="loadQ(this)">Explain the chain rule and δ₃ = −0.04832 in our network like I'm 15.</button>
+      <button class="qchip" onclick="loadQ(this)">What if we used ReLU in the hidden layer instead of sigmoid? Recompute h₁ and h₂.</button>
+      <button class="qchip" onclick="loadQ(this)">Why learning rate 0.5? Show one update step with η=5 — does it diverge?</button>
+    </div>
+
+    <textarea class="api-inp" id="tutorQ" rows="3" placeholder="Or type your own question about neural networks…" style="resize:vertical;margin-bottom:12px;line-height:1.6"></textarea>
+
+    <div style="display:flex;gap:9px;margin-bottom:12px;align-items:center">
+      <button class="ai-btn" id="askBtn" style="flex:1" onclick="askTutor()">🎓 Ask the Tutor</button>
+      <div style="text-align:center;flex-shrink:0;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:7px 11px">
+        <div id="sessionCost" style="font-family:var(--font-m);font-size:.76rem;color:var(--green)">$0.0000</div>
+        <div style="font-size:.52rem;color:var(--muted)">of $0.20 cap</div>
+      </div>
+    </div>
+
+    <div style="background:#0a0818;border:1px solid var(--border2);border-radius:11px;padding:13px">
+      <div style="font-size:.6rem;color:var(--gold);font-family:var(--font-d);letter-spacing:.1em;margin-bottom:8px;display:flex;justify-content:space-between"><span>🎓 TUTOR'S ANSWER</span><span id="tutorMeta" style="font-family:var(--font-m);font-size:.6rem;color:var(--muted)"></span></div>
+      <div id="tutorOut" class="out-txt out-empty">Ask a question and the answer appears here — explained with this episode's exact numbers.</div>
+    </div>
+  </div>
+
+  <div class="insight"><div class="ititle">💡 WHY HAIKU + A COST CAP?</div><div class="itext">The tutor uses <b style="color:var(--green)">Claude Haiku 4.5</b> ($1/$5 per MTok) — fast, inexpensive, and more than capable of explaining any step in this episode. Paired with the guardrails (one question per call, max_tokens=600, $0.20 session cap), your learning stays genuinely low-cost. That's the model-routing lesson from Ep 05 applied to your own budget: match the model to the task, and use the cheapest one that does the job well.</div></div>
+</div>`},
+];
+
+// ── ACTIVATION GRAPH ──
+const ACT_FNS={
+  sigmoid:{f:x=>1/(1+Math.exp(-x)),col:'#a78bfa',desc:'σ(x) = 1/(1+e⁻ˣ) — squashes to (0,1). Our network uses it everywhere. Derivative σ(1−σ) maxes at 0.25 — the vanishing-gradient culprit. Best for binary output layers.'},
+  relu:{f:x=>Math.max(0,x),col:'#4ade80',desc:'ReLU(x) = max(0,x) — dead simple, derivative is exactly 1 for x>0 so gradients flow untouched. The default for hidden layers since 2012. Risk: neurons stuck at 0 forever ("dead ReLUs").'},
+  tanh:{f:x=>Math.tanh(x),col:'#22d3ee',desc:'tanh(x) — like sigmoid but zero-centred (−1,1), which helps optimisation. Still saturates at extremes. Common in RNNs/LSTMs.'},
+  leaky:{f:x=>x>0?x:0.01*x,col:'#f472b6',desc:'Leaky ReLU = max(0.01x, x) — tiny slope for negatives keeps "dead" neurons trainable. Use when plain ReLU kills too many units.'},
+};
+function drawActivation(name,btn){
+  if(btn){document.querySelectorAll('#actBtns .pg-btn2').forEach(b=>{b.style.borderColor='var(--border2)';b.style.color='var(--text)';});btn.style.borderColor=ACT_FNS[name].col;btn.style.color=ACT_FNS[name].col;}
+  const cv=document.getElementById('actCanvas');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const W=cv.width=cv.offsetWidth*2,H=cv.height=400;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.04)';
+  for(let i=1;i<8;i++){ctx.beginPath();ctx.moveTo(W*i/8,0);ctx.lineTo(W*i/8,H);ctx.stroke();}
+  const fn=ACT_FNS[name];
+  const xMin=-5,xMax=5,yMin=-1.5,yMax=1.5+(name==='relu'||name==='leaky'?3.5:0);
+  ctx.strokeStyle=fn.col;ctx.lineWidth=4;ctx.beginPath();
+  for(let px=0;px<=W;px+=2){const x=xMin+(xMax-xMin)*px/W;const y=fn.f(x);const py=H-((y-yMin)/(yMax-yMin))*H;px===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();
+  ctx.strokeStyle=fn.col;ctx.lineWidth=2;ctx.setLineDash([6,5]);ctx.globalAlpha=.5;ctx.beginPath();
+  for(let px=0;px<=W;px+=2){const x=xMin+(xMax-xMin)*px/W;const d=(fn.f(x+0.001)-fn.f(x-0.001))/0.002;const py=H-((d-yMin)/(yMax-yMin))*H;px===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+  ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+  ctx.fillStyle=fn.col;ctx.font='600 22px DM Sans';ctx.fillText(name.toUpperCase(),16,32);
+  ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='18px DM Sans';ctx.fillText('— function   - - derivative',16,58);
+  const d=document.getElementById('actDesc');if(d)d.textContent=fn.desc;
+}
+
+// ── PLAYGROUND ──
+const DATA=[[0.5,0.7,1],[0.8,0.6,1],[0.2,0.8,0],[0.7,0.7,1],[0.1,0.4,0],[0.6,0.5,1],[0.3,0.6,0],[0.2,0.3,0]];
+let NET=null,lossHistory=[],epochCount=0,playLR=0.5;
+function sigmoid(x){return 1/(1+Math.exp(-x));}
+function initNet(){NET={w1:0.3,w2:0.5,w3:0.4,w4:0.2,b1:0.1,b2:0.1,w5:0.6,w6:0.8,b3:0.2};lossHistory=[];epochCount=0;}
+function forward(x1,x2){const z1=NET.w1*x1+NET.w2*x2+NET.b1,h1=sigmoid(z1);const z2=NET.w3*x1+NET.w4*x2+NET.b2,h2=sigmoid(z2);const z3=NET.w5*h1+NET.w6*h2+NET.b3,yh=sigmoid(z3);return{h1,h2,yh};}
+function trainEpoch(){let tl=0;for(const[x1,x2,y]of DATA){const{h1,h2,yh}=forward(x1,x2);tl+=0.5*(y-yh)*(y-yh);const d3=-(y-yh)*yh*(1-yh);const d1=d3*NET.w5*h1*(1-h1);const d2=d3*NET.w6*h2*(1-h2);NET.w5-=playLR*d3*h1;NET.w6-=playLR*d3*h2;NET.b3-=playLR*d3;NET.w1-=playLR*d1*x1;NET.w2-=playLR*d1*x2;NET.b1-=playLR*d1;NET.w3-=playLR*d2*x1;NET.w4-=playLR*d2*x2;NET.b2-=playLR*d2;}epochCount++;const avg=tl/DATA.length;lossHistory.push(avg);if(lossHistory.length>600)lossHistory.shift();return avg;}
+function updateLR(v){playLR=Math.pow(10,parseFloat(v));safeSet('lrVal',playLR<0.1?playLR.toFixed(3):playLR.toFixed(2));}
+function refreshPlayground(){if(!NET)initNet();const avg=lossHistory.length?lossHistory[lossHistory.length-1]:DATA.reduce((s,[x1,x2,y])=>{const{yh}=forward(x1,x2);return s+0.5*(y-yh)*(y-yh);},0)/DATA.length;let correct=0;for(const[x1,x2,y]of DATA){const{yh}=forward(x1,x2);if((yh>0.5?1:0)===y)correct++;}safeSet('pgEpoch',epochCount);safeSet('pgLoss',avg.toFixed(4));safeSet('pgAcc',Math.round(correct/DATA.length*100)+'%');safeSet('pgPred',forward(0.5,0.7).yh.toFixed(4));drawLoss();drawNet();drawPreds();}
+function trainNetwork(){if(!NET)initNet();const epochs=parseInt(document.getElementById('epSlider')?.value||100);let i=0;const tick=()=>{for(let k=0;k<5&&i<epochs;k++,i++)trainEpoch();refreshPlayground();if(i<epochs)requestAnimationFrame(tick);};tick();}
+function stepOnce(){if(!NET)initNet();trainEpoch();refreshPlayground();}
+function resetNetwork(){initNet();refreshPlayground();}
+function drawLoss(){const cv=document.getElementById('lossCanvas');if(!cv)return;const ctx=cv.getContext('2d');const W=cv.width=cv.offsetWidth*2,H=cv.height=300;ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,.06)';for(let i=1;i<5;i++){ctx.beginPath();ctx.moveTo(0,H*i/5);ctx.lineTo(W,H*i/5);ctx.stroke();}if(lossHistory.length<2){ctx.fillStyle='rgba(255,255,255,.25)';ctx.font='20px DM Sans';ctx.fillText('Press Train to begin…',20,H/2);return;}const maxL=Math.max(...lossHistory,0.15);ctx.strokeStyle='#f472b6';ctx.lineWidth=4;ctx.beginPath();lossHistory.forEach((l,i)=>{const px=W*i/(lossHistory.length-1),py=H-(l/maxL)*H*0.92-8;i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);});ctx.stroke();ctx.fillStyle='#f472b6';ctx.font='600 20px DM Mono';ctx.fillText('loss: '+lossHistory[lossHistory.length-1].toFixed(4),16,30);}
+function drawNet(){const cv=document.getElementById('netCanvas');if(!cv)return;const ctx=cv.getContext('2d');const W=cv.width=cv.offsetWidth*2,H=cv.height=360;ctx.clearRect(0,0,W,H);const X=[W*0.16,W*0.5,W*0.84];const pos={x1:[X[0],H*0.3],x2:[X[0],H*0.7],h1:[X[1],H*0.27],h2:[X[1],H*0.73],o:[X[2],H*0.5]};const edges=[['x1','h1',NET.w1],['x2','h1',NET.w2],['x1','h2',NET.w3],['x2','h2',NET.w4],['h1','o',NET.w5],['h2','o',NET.w6]];for(const[a,b,w]of edges){ctx.strokeStyle=w>=0?'rgba(74,222,128,.75)':'rgba(248,113,113,.75)';ctx.lineWidth=Math.min(14,Math.max(1.5,Math.abs(w)*5));ctx.beginPath();ctx.moveTo(pos[a][0],pos[a][1]);ctx.lineTo(pos[b][0],pos[b][1]);ctx.stroke();}const nodes=[['x1','#22d3ee'],['x2','#22d3ee'],['h1','#a78bfa'],['h2','#a78bfa'],['o','#f472b6']];for(const[n,col]of nodes){ctx.beginPath();ctx.arc(pos[n][0],pos[n][1],26,0,Math.PI*2);ctx.fillStyle='rgba(10,8,24,.95)';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=4;ctx.stroke();ctx.fillStyle=col;ctx.font='700 19px DM Sans';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n==='o'?'ŷ':n,pos[n][0],pos[n][1]);}ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle='rgba(255,255,255,.45)';ctx.font='16px DM Mono';ctx.fillText(`w5=${NET.w5.toFixed(2)} w6=${NET.w6.toFixed(2)}`,W*0.55,H-14);ctx.fillText(`w1=${NET.w1.toFixed(2)} w2=${NET.w2.toFixed(2)} w3=${NET.w3.toFixed(2)} w4=${NET.w4.toFixed(2)}`,16,H-14);}
+function drawPreds(){const el=document.getElementById('predTable');if(!el)return;el.innerHTML=`<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px"><table style="width:100%"><thead><tr><th>Study</th><th>Sleep</th><th>Truth</th><th>ŷ</th><th>Call</th></tr></thead><tbody>${DATA.map(([x1,x2,y],i)=>{const yh=forward(x1,x2).yh;const call=yh>0.5?1:0,ok=call===y;return `<tr ${i===0?'style="background:rgba(167,139,250,.06)"':''}><td>${(x1*10).toFixed(0)}h${i===0?' ⭐':''}</td><td>${(x2*10).toFixed(0)}h</td><td>${y?'✅':'❌'}</td><td class="${ok?'ok':'bad'}">${yh.toFixed(3)}</td><td>${ok?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}</td></tr>`;}).join('')}</tbody></table></div>`;}
+
+// ── AI TUTOR ──
+const MODEL={id:'claude-haiku-4-5-20251001',name:'Claude Haiku 4.5',inPrice:1,outPrice:5};
+let tutorCost=0;
+const TUTOR_CAP=0.20;
+function loadQ(btn){const t=document.getElementById('tutorQ');if(t)t.value=btn.textContent.trim();}
+const TUTOR_SYSTEM=`You are a patient neural networks tutor inside an educational app (AI Education Series Ep 06). The student just studied this exact worked example — ALWAYS explain using these numbers:
+Network: 2 inputs → 2 hidden (sigmoid) → 1 output (sigmoid).
+Scenario: predict exam pass from study hours and sleep. Example student: x1=0.5 (5h study), x2=0.7 (7h sleep), target y=1.
+Weights: w1=0.3 w2=0.5 w3=0.4 w4=0.2 b1=b2=0.1, w5=0.6 w6=0.8 b3=0.2.
+Forward: z1=0.60 h1=0.6457, z2=0.44 h2=0.6083, z3=1.0740, ŷ=0.7454. MSE loss L=0.0324.
+Backprop: δ3=−0.04832, ∂L/∂w5=−0.03120, ∂L/∂w6=−0.02939, δ1=−0.00663, δ2=−0.00921. Learning rate η=0.5.
+Teach step by step, concrete, short paragraphs, plain language. If asked to recompute with different settings, show the arithmetic.`;
+async function askTutor(){
+  const key=document.getElementById('apiKey')?.value.trim();
+  if(!key){alert('Please enter your Anthropic API key.');return;}
+  const q=document.getElementById('tutorQ')?.value.trim();
+  if(!q){alert('Please type or select a question.');return;}
+  if(tutorCost>=TUTOR_CAP){alert('Session cost cap of $'+TUTOR_CAP+' reached — protecting your budget. Refresh to reset.');return;}
+  const btn=document.getElementById('askBtn'),out=document.getElementById('tutorOut');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Thinking…';}
+  if(out){out.className='out-txt streaming';out.textContent='';}
+  const model=MODEL;const start=Date.now();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:model.id,max_tokens:600,system:TUTOR_SYSTEM,messages:[{role:'user',content:q}]})});
+    const data=await res.json();
+    if(data.error){if(out){out.className='out-txt';out.textContent='❌ API Error: '+data.error.message;}}
+    else if(data.stop_reason==='refusal'){if(out){out.className='out-txt';out.textContent='🛡️ The model declined this request (stop_reason: "refusal") — a built-in safety behaviour of Mythos-class models. Try rephrasing.';}}
+    else{
+      const text=data.content?.[0]?.text||'';
+      const inT=data.usage?.input_tokens||0,outT=data.usage?.output_tokens||0;
+      const cost=(inT*model.inPrice+outT*model.outPrice)/1_000_000;
+      tutorCost+=cost;safeSet('sessionCost','$'+tutorCost.toFixed(4));
+      const meta=document.getElementById('tutorMeta');if(meta)meta.textContent=`${model.name} · ${inT+outT} tok · $${cost.toFixed(4)} · ${((Date.now()-start)/1000).toFixed(1)}s`;
+      if(out){out.className='out-txt';out.textContent=text;}
+    }
+  }catch(e){if(out){out.className='out-txt';out.textContent='❌ Error: '+e.message;}}
+  if(btn){btn.disabled=false;btn.textContent='🎓 Ask the Tutor';}
+}
+
+// ── NAVIGATION ──
+let currentTab=0;
+function showTab(idx){
+  currentTab=idx;visited.add(idx);
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===idx);t.classList.toggle('visited',visited.has(i)&&i!==idx);});
+  document.getElementById('content').innerHTML=tabs[idx].render();
+  roadmapData.forEach((r,i)=>{const rm=document.getElementById('rm'+i);if(rm&&visited.has(i)){rm.textContent='✓';rm.style.background='rgba(74,222,128,.12)';rm.style.borderColor='var(--green)';rm.style.color='var(--green)';}});
+  safeSet('navProgTxt',`Step ${idx+1} of ${tabs.length}`);
+  const fill=document.getElementById('navProgFill');if(fill)fill.style.width=((idx+1)/tabs.length*100)+'%';
+  const pb=document.getElementById('prevBtn'),nb=document.getElementById('nextBtn');
+  if(pb)pb.disabled=idx===0;
+  if(nb){nb.disabled=idx===tabs.length-1;nb.textContent=idx===tabs.length-1?'Done ✓':'Next →';}
+  if(idx===2)setTimeout(()=>drawActivation('sigmoid',document.querySelector('#actBtns .pg-btn2')),60);
+  if(idx===6)setTimeout(()=>{if(!NET)initNet();refreshPlayground();},60);
+  if(idx===7)setTimeout(()=>{const e=document.getElementById('apiKey');if(e)e.focus();},60);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navTab(d){const n=currentTab+d;if(n>=0&&n<tabs.length)showTab(n);}
+showTab(0);
+
+// ── PWA ICON ── (glowing neural network on deep violet)
+(function(){
+  const c=document.createElement('canvas');c.width=c.height=512;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(256,256,0,256,256,300);
+  g.addColorStop(0,'#1a1340');g.addColorStop(.6,'#0d0a22');g.addColorStop(1,'#070612');
+  ctx.fillStyle=g;ctx.fillRect(0,0,512,512);
+  // outer glow rings
+  ctx.strokeStyle='rgba(167,139,250,.9)';ctx.lineWidth=10;ctx.beginPath();ctx.arc(256,256,232,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='rgba(34,211,238,.55)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(256,256,202,0,Math.PI*2);ctx.stroke();
+  // network: 2-2-1 mirroring the app
+  const L1=[[166,190],[166,322]],L2=[[256,160],[256,352]],L3=[[346,256]];
+  // edges with glow
+  ctx.shadowColor='#22d3ee';ctx.shadowBlur=12;
+  ctx.lineWidth=5;
+  for(const a of L1)for(const b of L2){ctx.strokeStyle='rgba(34,211,238,.6)';ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}
+  ctx.shadowColor='#f472b6';
+  for(const a of L2)for(const b of L3){ctx.strokeStyle='rgba(244,114,182,.75)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}
+  ctx.shadowBlur=0;
+  // nodes — glowing
+  const allNodes=[[L1[0],'#22d3ee'],[L1[1],'#22d3ee'],[L2[0],'#a78bfa'],[L2[1],'#a78bfa'],[L3[0],'#f472b6']];
+  for(const [[x,y],col] of allNodes){
+    ctx.shadowColor=col;ctx.shadowBlur=18;
+    ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.fillStyle='rgba(13,10,34,.55)';ctx.fill();
+    ctx.strokeStyle=col;ctx.lineWidth=4;ctx.stroke();
+  }
+  // title
+  ctx.shadowColor='#a78bfa';ctx.shadowBlur=14;
+  ctx.font='800 52px Cinzel, serif';ctx.fillStyle='#c4b5fd';ctx.textAlign='center';ctx.fillText('NEURAL',256,420);
+  ctx.shadowBlur=0;
+  ctx.font='600 30px DM Sans, sans-serif';ctx.fillStyle='#22d3ee';ctx.fillText('NETWORKS',256,458);
+  const url=c.toDataURL('image/png');
+  document.getElementById('apple-icon').href=url;
+  document.head.insertAdjacentHTML('beforeend',`<link rel="icon" type="image/png" href="${url}">`);
+  const mf={name:'Neural Networks & Backpropagation — Ep 06',short_name:'Neural Nets',description:'Episode 6 — forward pass, activations, loss, backprop, gradient descent, live playground, AI tutor',start_url:'.',display:'standalone',background_color:'#070612',theme_color:'#070612',icons:[{src:url,sizes:'512x512',type:'image/png'}]};
+  document.getElementById('manifest-link').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}));
+  const sw=`const C='nn-v2';self.addEventListener('install',e=>e.waitUntil(caches.open(C)));self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))))`;
+  if('serviceWorker' in navigator)navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'})));
+})();
+</script>
+</body>
+</html>
